@@ -1,1 +1,5 @@
 # imfo
+
+```shell
+npx imfo
+```

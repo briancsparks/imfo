@@ -1,0 +1,26 @@
+{
+  "name": "imfo",
+  "version": "1.0.0",
+  "description": "Get system info",
+  "main": "index.js",
+  "bin": {
+    "imfo": "node bin/imfo.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/imfo.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/imfo/issues"
+  },
+  "homepage": "https://github.com/briancsparks/imfo#readme",
+  "dependencies": {
+    "minimist": "^1.2.5",
+    "underscore": "^1.12.0"
+  }
+}

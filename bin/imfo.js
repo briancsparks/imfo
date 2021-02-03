@@ -46,7 +46,7 @@ function main() {
         return m;
       }
 
-      if (key.startsWith('set')) {
+      if (key.startsWith('set') || key === 'tmpDir') {
         return m;
       }
 

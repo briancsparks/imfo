@@ -54,7 +54,11 @@ function main() {
     }, {});
   }
 
-  process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+  if (typeof result === 'object') {
+    process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+  } else {
+    process.stdout.write(result + '\n');
+  }
 }
 
 function scoreTheIp(ip ='') {

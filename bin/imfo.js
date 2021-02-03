@@ -40,19 +40,21 @@ function main() {
     result = {...result, constants: null};
   }
 
-  result = _.reduce(result, function (m, value, key) {
-    if (typeof value !== 'function') {
-      return m;
-    }
+  if (typeof result === 'object') {
+    result = _.reduce(result, function (m, value, key) {
+      if (typeof value !== 'function') {
+        return m;
+      }
 
-    if (key.startsWith('set')) {
-      return m;
-    }
+      if (key.startsWith('set')) {
+        return m;
+      }
 
-    return {...m, [key]: value()};
-  }, {});
+      return {...m, [key]: value()};
+    }, {});
+  }
 
-  process.stdout.write(JSON.stringify(result, null, 2));
+  process.stdout.write(JSON.stringify(result, null, 2) + '\n');
 }
 
 function scoreTheIp(ip ='') {

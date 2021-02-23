@@ -1,6 +1,6 @@
 {
   "name": "imfo",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Get system info in an easy, consistent, cross-platform way.",
   "main": "index.js",
   "bin": {

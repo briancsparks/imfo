@@ -6,6 +6,11 @@ const os      = require('os')
 
 const ipOut = ARGV.ip  || ARGV.ipconfig || ARGV.ifconfig;
 
+let haveNet15 = false;
+let haveNet10 = false;
+let have192   = false;
+let have172   = false;
+
 main();
 
 function main() {
@@ -20,7 +25,21 @@ function main() {
     _.each(os.networkInterfaces(), function (iface, name) {
       _.each(iface, function (subIface) {
         if (subIface.family.toLowerCase() === 'ipv4') {
+          if (subIface.address.startsWith('1[567]\.'))  {haveNet15 = true;}
+          if (subIface.address.startsWith('10\.'))      {haveNet10 = true;}
+          if (subIface.address.startsWith('192\.'))     {have192 = true;}
+          if (subIface.address.startsWith('172\.'))     {have172 = true;}
+        }
+      })
+    });
+
+    _.each(os.networkInterfaces(), function (iface, name) {
+      _.each(iface, function (subIface) {
+        if (subIface.family.toLowerCase() === 'ipv4') {
           const [score_, noProxyNeeded_] = scoreTheIp(subIface.address);
+
+          // console.log(`${subIface.address} score ${score_}`);
+
           if (score_ > score) {
             score = score_;
             noProxyNeeded = noProxyNeeded_;
@@ -61,6 +80,7 @@ function main() {
   }
 }
 
+// --------------------------------------------------------------------------------------------------------------------
 function scoreTheIp(ip ='') {
   const octets = ip.split('.');
   if (octets.length !== 4) {
@@ -92,6 +112,9 @@ function scoreTheIp(ip ='') {
 
     // Linux at a work
     if (octets[0] === '15' || octets[0] === '16' || octets[0] === '17') {
+      if (have192) {
+        return [8, true];       // Probably on VPN
+      }
       return [10, false];
     }
 
@@ -112,6 +135,9 @@ function scoreTheIp(ip ='') {
     }
 
     if (octets[0] === '15' || octets[0] === '16' || octets[0] === '17') {
+      if (have192) {
+        return [8, false];
+      }
       return [10, false];
     }
 

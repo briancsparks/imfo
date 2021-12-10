@@ -21,6 +21,7 @@
   "homepage": "https://github.com/briancsparks/imfo#readme",
   "dependencies": {
     "minimist": "^1.2.5",
+    "mongodb": "^4.2.1",
     "underscore": "^1.12.0"
   }
 }

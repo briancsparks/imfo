@@ -2,7 +2,10 @@
 
 const ARGV    = require('minimist')(process.argv.slice(2));
 const _       = require('underscore');
-const os      = require('os')
+const os      = require('os');
+
+const imfo    = require('..')
+const {cleanupArgs} = require("../lib/atlas");
 
 const ipOut = ARGV.ip  || ARGV.ipconfig || ARGV.ifconfig;
 
@@ -14,6 +17,35 @@ let have172   = false;
 main();
 
 function main() {
+  if (ARGV.get) {
+    const query = cleanupArgs(ARGV, '_,get');
+
+    return imfo.mongoConnect('', function (err, client) {
+      if (err) {
+        console.error(err);
+        process.exit(9);
+        return;
+      }
+
+      const dbOne = imfo.Collection("main", "imfo");
+      return dbOne.query(query, function (err, qdata) {
+        if (err) {
+          console.error(err);
+          process.exit(9);
+          return;
+        }
+
+        console.log(qdata);
+
+        client.close();
+      });
+    })
+  }
+
+  return fnInfo();
+}
+
+function fnInfo() {
   let result = os;
   let score = -1;
   let noProxyNeeded = true;
@@ -38,7 +70,7 @@ function main() {
         if (subIface.family.toLowerCase() === 'ipv4') {
           const [score_, noProxyNeeded_] = scoreTheIp(subIface.address);
 
-          // console.log(`${subIface.address} score ${score_}`);
+          //console.log(`${subIface.address} score: ${score_}, no proxy: ${noProxyNeeded_}`);
 
           if (score_ > score) {
             score = score_;

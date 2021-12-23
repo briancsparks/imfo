@@ -3,8 +3,12 @@
 const ARGV    = require('minimist')(process.argv.slice(2));
 const _       = require('underscore');
 const os      = require('os');
+const fs      = require('fs');
 
 const imfo    = require('..')
+const {
+  safeJSONParse, safeJSONParseSq, safeReadFileSync, allAliases
+}                   = require('../lib/utils');
 const {cleanupArgs} = require("../lib/atlas");
 
 const ipOut = ARGV.ip  || ARGV.ipconfig || ARGV.ifconfig;
@@ -14,39 +18,125 @@ let haveNet10 = false;
 let have192   = false;
 let have172   = false;
 
-main();
+(function () {
+  main(function(err, data) {
+    if (err) {
+      process.exit(typeof err === 'number' ? err : 99);
+    }
+    console.log(data);
+  });
+}());
 
-function main() {
+function main(callback) {
+  // console.log({ARGV})
+
+  // -------------------------------------------------------------------------------------------------------------------
   if (ARGV.get) {
     const query = cleanupArgs(ARGV, '_,get');
 
-    return imfo.mongoConnect('', function (err, client) {
-      if (err) {
-        console.error(err);
-        process.exit(9);
-        return;
-      }
-
-      const dbOne = imfo.Collection("main", "imfo");
-      return dbOne.query(query, function (err, qdata) {
+    return imfo.MongoCollection({c:'main', db:'imfo'}, function (err, {client, db}) {
+      return db.findOne(query, function (err, qdata) {
         if (err) {
-          console.error(err);
-          process.exit(9);
-          return;
+          return callback(9);
         }
 
-        console.log(qdata);
+        // console.log(qdata);
 
         client.close();
+        return callback(null, qdata);
       });
     });
   }
 
-  if (ARGV.put) {
+  // -------------------------------------------------------------------------------------------------------------------
+  if (ARGV.upsert) {
+    let   {upsert} = ARGV
+    const query = cleanupArgs(ARGV, '_,upsert');
 
+    upsert = specialArg(upsert);
+    if (upsert === null) {
+      return callback(10);
+    }
+
+    // console.log({upsert, query, _: ARGV._})
+
+    return imfo.MongoCollection({c:'main', db:'imfo'}, function (err, {client, db}) {
+      return db.upsert(query, upsert, function(err, qdata) {
+        if (err) {
+          return callback(err);
+        }
+
+        const {ok} = allAliases(qdata, ',', 'ok,acknowledged');
+        // console.log({ok});
+
+        client.close();
+        return callback(null, {ok, ...qdata});
+      });
+    });
   }
 
-  return fnInfo();
+  // -------------------------------------------------------------------------------------------------------------------
+  if (ARGV.many) {
+    let   {many} = ARGV
+    const query = cleanupArgs(ARGV, '_,many');
+
+    many = specialArg(many);
+    if (many === null) {
+      return callback(10);
+    }
+
+    // console.log(1, {many, query, _: ARGV._})
+
+    // return;
+    return imfo.MongoCollection({c:'main', db:'imfo'}, function (err, {client, db}) {
+      return db.updateMany(query, many, function(err, qdata) {
+        if (err) {
+          return callback(err);
+        }
+
+        const {ok} = allAliases(qdata, ',', 'ok,acknowledged');
+        // console.log({ok, ...qdata});
+
+        client.close();
+        return callback(null, {ok, ...qdata});
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------------------------------------------------------
+
+  // TODO: insert, updateMany, findAll
+
+  // -------------------------------------------------------------------------------------------------------------------
+  return callback(null, fnInfo());
+}
+
+function specialArg(arg) {
+  let result = arg;
+
+  if (result[0] === '{') {
+    // JSON?
+    result = safeJSONParse(result) || safeJSONParseSq(result) || result;
+
+  } else if (result[0] === '@') {
+    // Read file
+    const filename = result.substr(1)
+    const content = safeReadFileSync(filename);
+    if (content === null || content === undefined) {
+      console.error(`ENOENT: ${filename}`);
+      return null;
+    }
+
+    const json = safeJSONParse(content);
+    if (!json && filename.endsWith('.json')) {
+      console.error(`ENOT_JSON: ${filename}`);
+      return null;
+    }
+
+    result = json || content || result;
+  }
+
+  return result;
 }
 
 function fnInfo() {
